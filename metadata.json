@@ -1,0 +1,9 @@
+{
+  "name": "Vrinda Face & Superspeciality Hospital",
+  "description": "India's First Exclusive Face Surgery Center. A premium medical platform featuring appointment booking, patient dashboards, and AI-powered symptom checking.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

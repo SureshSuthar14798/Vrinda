@@ -1,0 +1,125 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required, email format)
+    //   - displayName: string
+    //   - role: string (required, enum: patient, doctor, admin)
+    //   - phone: string
+    //   - createdAt: string (date-time)
+    //
+    // Collection: doctors
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - specialization: string (required)
+    //   - experience: string
+    //   - bio: string
+    //   - department: string (required)
+    //   - photoUrl: string
+    //
+    // Collection: appointments
+    // Document ID: {appointmentId}
+    // Fields:
+    //   - patientId: string (required)
+    //   - doctorId: string (required)
+    //   - date: string (required, date format)
+    //   - timeSlot: string (required)
+    //   - status: string (required, enum: pending, confirmed, cancelled, completed)
+    //
+    // Collection: medicalRecords
+    // Document ID: {recordId}
+    // Fields:
+    //   - patientId: string (required)
+    //   - doctorId: string (required)
+    //   - type: string (required, enum: report, prescription)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "sureshsuthar14798@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isDoctor() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'doctor';
+    }
+
+    // Domain Validators
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['patient', 'doctor', 'admin'];
+    }
+
+    function isValidAppointment(data) {
+      return data.keys().hasAll(['patientId', 'doctorId', 'date', 'timeSlot', 'status']) &&
+             data.patientId is string &&
+             data.doctorId is string &&
+             data.status in ['pending', 'confirmed', 'cancelled', 'completed'];
+    }
+
+    // Rules
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(uid) || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(uid) || isAdmin());
+    }
+
+    match /doctors/{uid} {
+      allow read: if true; // Publicly readable for booking
+      allow write: if isAdmin();
+    }
+
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.patientId || 
+        request.auth.uid == resource.data.doctorId || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && isValidAppointment(request.resource.data) && (
+        request.auth.uid == request.resource.data.patientId || 
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && isValidAppointment(request.resource.data) && (
+        request.auth.uid == resource.data.patientId || 
+        request.auth.uid == resource.data.doctorId || 
+        isAdmin()
+      );
+    }
+
+    match /medicalRecords/{recordId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.patientId || 
+        request.auth.uid == resource.data.doctorId || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (
+        request.auth.uid == request.resource.data.doctorId || 
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.doctorId || 
+        isAdmin()
+      );
+    }
+  }
+}

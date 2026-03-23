@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+  
+  .glass-dark {
+    @apply bg-slate-900/70 backdrop-blur-md border border-slate-800/20 shadow-lg;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition-all active:scale-95 shadow-md shadow-teal-600/20;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-white text-teal-700 border border-teal-100 rounded-xl font-medium hover:bg-teal-50 transition-all active:scale-95 shadow-sm;
+  }
+
+  .card-hover {
+    @apply hover:shadow-xl hover:-translate-y-1 transition-all duration-300;
+  }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}

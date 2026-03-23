@@ -2,15 +2,16 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Star, Award, Calendar, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import userImage from '../assets/images/user.jpg';
 
 const doctors = [
   {
     id: '1',
-    name: 'Dr. Vikram Sharma',
+    name: 'Dr. Ashok Suthar',
     specialization: 'Maxillofacial Surgeon',
     experience: '15+ Years',
     bio: 'Expert in facial reconstruction and jaw surgery with international training.',
-    photoUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=500',
+    photoUrl: userImage,
     department: 'Maxillofacial Surgery'
   },
   {
@@ -33,11 +34,11 @@ const doctors = [
   },
   {
     id: '4',
-    name: 'Dr. Priya Mehta',
+    name: 'Dr. Parth Mehta',
     specialization: 'Hair Transplant Surgeon',
     experience: '8+ Years',
     bio: 'Leading expert in FUE hair restoration and scalp health.',
-    photoUrl: 'https://images.unsplash.com/photo-1559839734-2b71f153678f?auto=format&fit=crop&q=80&w=500',
+    photoUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=500',
     department: 'Hair Transplant'
   }
 ];
@@ -66,7 +67,7 @@ export default function Doctors() {
                 transition={{ delay: i * 0.1 }}
                 className="glass rounded-3xl overflow-hidden card-hover group"
               >
-                <div className="relative aspect-[4/5] overflow-hidden">
+                <div className="relative aspect-4/5 overflow-hidden">
                   <img 
                     src={doctor.photoUrl} 
                     alt={doctor.name} 

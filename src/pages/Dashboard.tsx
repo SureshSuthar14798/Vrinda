@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
   FileText, 
@@ -24,6 +25,7 @@ import SymptomChecker from '../components/SymptomChecker';
 
 export default function Dashboard() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [activeTab, setActiveTab] = useState<'appointments' | 'records' | 'ai'>('appointments');
@@ -61,6 +63,8 @@ export default function Dashboard() {
 
   if (!user) return <div className="pt-32 text-center">Please login to view your dashboard.</div>;
 
+  console.log(user)
+
   return (
     <div className="pt-20 min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -86,12 +90,12 @@ export default function Dashboard() {
           <div className="lg:col-span-1 space-y-4">
             <div className="glass p-6 rounded-3xl">
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-teal-600 flex items-center justify-center text-white font-bold text-xl">
-                  {profile?.displayName?.[0]}
+                <div className="w-12 h-12 capitalize rounded-2xl bg-teal-600 flex items-center justify-center text-white font-bold text-xl">
+                  {user?.email?.[0]}
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900">{profile?.displayName}</p>
-                  <p className="text-xs text-slate-500">{profile?.role.toUpperCase()}</p>
+                  <p className="font-bold text-slate-900">{user?.email}</p>
+                  <p className="text-xs text-slate-500">{profile?.role ? profile?.role.toUpperCase() : 'Patient'}</p>
                 </div>
               </div>
 
@@ -139,7 +143,11 @@ export default function Dashboard() {
                 >
                   <div className="flex justify-between items-center">
                     <h3 className="text-xl font-bold text-slate-900">Upcoming Appointments</h3>
-                    <button className="btn-primary py-2 px-4 text-sm flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/booking')}
+                      className="btn-primary py-2 px-4 text-sm flex items-center gap-2"
+                    >
                       <Plus size={16} /> New Booking
                     </button>
                   </div>

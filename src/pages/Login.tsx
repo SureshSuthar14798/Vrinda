@@ -1,13 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuth } from '../App';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HeartPulse, Chrome, Mail, ChevronLeft } from 'lucide-react';
+import { HeartPulse, Chrome, ChevronLeft, Eye, EyeOff } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
 
 export default function Login() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -16,6 +24,20 @@ export default function Login() {
       navigate(from, { replace: true });
     }
   }, [user, navigate, location]);
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      } catch (err: any) {
+      console.error('Email login error', err);
+      setError(err.message || 'Unable to sign in. Check your credentials.');
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -33,7 +55,7 @@ export default function Login() {
         {/* Back to Home */}
         <button 
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-slate-500 hover:text-teal-600 transition-colors mb-8 group"
+          className="flex items-center gap-2 text-slate-500 hover:text-teal-600 transition-colors mb-4 group"
         >
           <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
           <span className="text-sm font-medium">Back to Home</span>
@@ -48,25 +70,70 @@ export default function Login() {
             <p className="text-slate-500 text-sm">Sign in to access your medical dashboard and book appointments.</p>
           </div>
 
-          <div className="space-y-4">
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="email">
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-teal-400 focus:outline-none"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1" htmlFor="password">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-teal-400 focus:outline-none pr-11"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-teal-600"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {error && <p className="text-xs text-red-500">{error}</p>}
+
             <button
+              type="submit"
+              disabled={loading}
+              className="w-full px-6 py-3 bg-teal-600 text-white rounded-2xl font-bold hover:bg-teal-500 transition-all disabled:opacity-50"
+            >
+              {loading ? 'Signing in...' : 'LOGIN'}
+            </button>
+
+            <div className="text-center text-slate-500">or</div>
+
+            <button
+              type="button"
               onClick={login}
-              className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-700 hover:border-teal-600 hover:bg-teal-50/30 transition-all group"
+              className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-700 hover:border-teal-600 hover:bg-teal-50/30 transition-all group"
             >
               <Chrome className="text-teal-600 group-hover:scale-110 transition-transform" size={20} />
               <span>Continue with Google</span>
             </button>
+          </form>
 
-            <button
-              onClick={login}
-              className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-slate-900 border-2 border-slate-900 rounded-2xl font-bold text-white hover:bg-slate-800 transition-all group"
-            >
-              <Mail className="text-teal-400 group-hover:scale-110 transition-transform" size={20} />
-              <span>Sign in with Gmail</span>
-            </button>
-          </div>
-
-          <div className="mt-10 pt-8 border-t border-slate-50 text-center">
+          <div className="pt-8 border-t border-slate-50 text-center">
             <p className="text-xs text-slate-400 leading-relaxed">
               By continuing, you agree to Vrinda Face Hospital's <br />
               <a href="#" className="text-teal-600 hover:underline">Terms of Service</a> and <a href="#" className="text-teal-600 hover:underline">Privacy Policy</a>.

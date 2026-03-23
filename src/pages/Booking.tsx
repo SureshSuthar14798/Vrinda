@@ -15,7 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { auth, db } from '../firebase';
 import { useAuth } from '../App';
 
 const bookingSchema = z.object({
@@ -61,6 +61,7 @@ export default function Booking() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<BookingForm>({
     resolver: zodResolver(bookingSchema),
@@ -76,17 +77,28 @@ export default function Booking() {
   const filteredDoctors = doctors.filter(d => d.dept === selectedDept);
 
   const onSubmit = async (data: BookingForm) => {
-    if (!user) {
-      login();
-      return;
-    }
-
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
+      let signedInUser = user;
+      if (!signedInUser) {
+        try {
+          await login();
+        } catch (error) {
+          console.error('Login before booking failed:', error);
+        }
+        signedInUser = auth.currentUser;
+      }
+
+      if (!signedInUser) {
+        setSubmitError('Please sign in to complete the booking (popup might be blocked).');
+        return;
+      }
+
       const doctor = doctors.find(d => d.id === data.doctorId);
       await addDoc(collection(db, 'appointments'), {
         ...data,
-        patientId: user.uid,
+        patientId: signedInUser.uid,
         doctorName: doctor?.name || 'Unknown Doctor',
         status: 'pending',
         createdAt: serverTimestamp()
@@ -95,9 +107,27 @@ export default function Booking() {
       setTimeout(() => navigate('/dashboard'), 3000);
     } catch (error) {
       console.error("Booking error:", error);
+      const maybeCode = (error as any)?.code as string | undefined;
+      if (maybeCode === 'permission-denied') {
+        setSubmitError('Permission denied while booking. Please login again and try.');
+      } else {
+        setSubmitError('Booking failed. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const onInvalid = (formErrors: typeof errors) => {
+    if (formErrors.department || formErrors.doctorId) {
+      setStep(1);
+      return;
+    }
+    if (formErrors.date || formErrors.timeSlot) {
+      setStep(2);
+      return;
+    }
+    setStep(3);
   };
 
   if (isSuccess) {
@@ -138,7 +168,7 @@ export default function Booking() {
             ></div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="p-8 md:p-12">
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="p-8 md:p-12">
             <AnimatePresence mode="wait">
               {step === 1 && (
                 <motion.div
@@ -217,12 +247,13 @@ export default function Booking() {
                       <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                         <Clock size={16} className="text-teal-600" /> Select Time Slot
                       </label>
+                      <input type="hidden" {...register('timeSlot')} />
                       <div className="grid grid-cols-2 gap-3">
                         {timeSlots.map(slot => (
                           <button
                             key={slot}
                             type="button"
-                            onClick={() => setValue('timeSlot', slot)}
+                            onClick={() => setValue('timeSlot', slot, { shouldValidate: true, shouldDirty: true })}
                             className={`p-3 text-sm rounded-xl border transition-all font-medium ${
                               watch('timeSlot') === slot 
                                 ? 'bg-teal-600 text-white border-teal-600 shadow-lg shadow-teal-600/20' 
@@ -296,6 +327,13 @@ export default function Booking() {
                     <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-center gap-3 text-amber-800 text-sm">
                       <AlertCircle size={20} />
                       <span>You need to be logged in to complete the booking.</span>
+                    </div>
+                  )}
+
+                  {submitError && (
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-700 text-sm">
+                      <AlertCircle size={20} />
+                      <span>{submitError}</span>
                     </div>
                   )}
 

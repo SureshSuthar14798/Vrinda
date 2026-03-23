@@ -191,6 +191,52 @@ const Navbar = () => {
   );
 };
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [pathname]);
+
+  return null;
+};
+
+const BackToTop = () => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setVisible(window.scrollY > 320);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const handleClick = () => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.button
+          type="button"
+          onClick={handleClick}
+          initial={{ opacity: 0, y: 20, scale: 0.8 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.8 }}
+          transition={{ duration: 0.2 }}
+          className="fixed cursor-pointer right-6 bottom-6 z-50 rounded-full bg-teal-600 p-4 text-white shadow-2xl shadow-teal-600/30 hover:bg-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+          aria-label="Scroll back to top"
+        >
+          <ChevronRight size={20} className="rotate-90deg" />
+        </motion.button>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const Footer = () => {
   const location = useLocation();
   // Hide footer on login page
@@ -271,35 +317,70 @@ const Footer = () => {
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+    let isMounted = true;
+    let requestSeq = 0;
+
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      if (!isMounted) return;
+
       setUser(u);
-      if (u) {
-        const docRef = doc(db, 'users', u.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setProfile(docSnap.data() as UserProfile);
-        } else {
-          // Create default profile
+      setAuthLoading(false);
+
+      const seq = ++requestSeq;
+      if (!u) {
+        setProfile(null);
+        return;
+      }
+
+      // Optimistic profile while Firestore loads (avoids blocking initial render).
+      setProfile((prev) => {
+        if (prev?.uid === u.uid) return prev;
+        return {
+          uid: u.uid,
+          email: u.email || '',
+          displayName: u.displayName || u.email || 'Guest',
+          role: 'patient',
+          createdAt: new Date().toISOString(),
+        };
+      });
+
+      (async () => {
+        try {
+          const docRef = doc(db, 'users', u.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (!isMounted || seq !== requestSeq) return;
+
+          if (docSnap.exists()) {
+            setProfile(docSnap.data() as UserProfile);
+            return;
+          }
+
           const newProfile: UserProfile = {
             uid: u.uid,
             email: u.email || '',
-            displayName: u.displayName || 'Guest',
+            displayName: u.displayName || u.email || 'Guest',
             role: 'patient',
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
           };
+
           await setDoc(docRef, newProfile);
+          if (!isMounted || seq !== requestSeq) return;
           setProfile(newProfile);
+        } catch (error) {
+          console.error('Profile load error:', error);
         }
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
+      })();
     });
-    return unsubscribe;
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const login = async () => {
@@ -325,7 +406,7 @@ export default function App() {
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
@@ -337,8 +418,9 @@ export default function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading: authLoading, login, logout }}>
       <Router>
+        <ScrollToTop />
         <div className="min-h-screen flex flex-col">
           <Navbar />
           <AnimatePresence>
@@ -347,14 +429,14 @@ export default function App() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 bg-red-600 text-white rounded-xl shadow-xl flex items-center gap-3"
+                className="fixed top-24 left-1/2 -translate-x-1/2 z-60 px-6 py-3 bg-red-600 text-white rounded-xl shadow-xl flex items-center gap-3"
               >
                 <X className="cursor-pointer" size={18} onClick={() => setAuthError(null)} />
                 <span className="text-sm font-medium">{authError}</span>
               </motion.div>
             )}
           </AnimatePresence>
-          <main className="flex-grow">
+          <main className="grow">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
@@ -367,6 +449,7 @@ export default function App() {
             </Routes>
           </main>
           <Footer />
+          <BackToTop />
         </div>
       </Router>
     </AuthContext.Provider>

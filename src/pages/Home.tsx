@@ -311,7 +311,7 @@ export default function Home() {
               </div>
               <div className="h-[400px] rounded-3xl overflow-hidden shadow-xl border-4 border-white">
                 <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3577.625368367988!2d72.98!3d26.27!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjbCsDE2JzEyLjAiTiA3MsKwNTgnNDguMCJF!5e0!3m2!1sen!2sin!4v1616450000000!5m2!1sen!2sin" 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3577.625368367988!2d72.9941625!3d26.2679131!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1sVRINDA+Face+%26+Superspeciality+Hospital!2s26.2679131,72.9941625!5e0!3m2!1sen!2sin!4v1711276800000" 
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 

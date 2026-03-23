@@ -57,7 +57,57 @@ export default function Doctors() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Mobile Slider */}
+          <div className="md:hidden overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scroll-smooth" style={{ scrollPaddingLeft: 'calc((100vw - 288px) / 2)' }}>
+            <div className="flex gap-4 w-max" style={{ paddingLeft: 'calc((100vw - 288px) / 2)', paddingRight: 'calc((100vw - 288px) / 2)' }}>
+              {doctors.map((doctor, i) => (
+                <motion.div
+                  key={doctor.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="glass rounded-3xl overflow-hidden card-hover group flex-shrink-0 w-72 snap-center"
+                >
+                  <div className="relative aspect-[4/5] overflow-hidden">
+                    <img 
+                      src={doctor.photoUrl} 
+                      alt={doctor.name} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1 text-xs font-bold text-teal-600 shadow-sm">
+                      <Star size={12} fill="currentColor" /> 4.9
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <span className="text-xs font-bold text-teal-600 uppercase tracking-widest mb-2 block">{doctor.specialization}</span>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">{doctor.name}</h3>
+                    <p className="text-sm text-slate-500 mb-6 line-clamp-2">{doctor.bio}</p>
+                    
+                    <div className="flex items-center gap-4 mb-6 text-xs text-slate-400">
+                      <div className="flex items-center gap-1">
+                        <Award size={14} /> {doctor.experience}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar size={14} /> Available
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => navigate('/booking', { state: { doctorId: doctor.id, doctorName: doctor.name, department: doctor.department } })}
+                      className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-teal-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      Book Consultation <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop Grid */}
+          <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-8">
             {doctors.map((doctor, i) => (
               <motion.div
                 key={doctor.id}
@@ -67,7 +117,7 @@ export default function Doctors() {
                 transition={{ delay: i * 0.1 }}
                 className="glass rounded-3xl overflow-hidden card-hover group"
               >
-                <div className="relative aspect-4/5 overflow-hidden">
+                <div className="relative aspect-[4/5] overflow-hidden">
                   <img 
                     src={doctor.photoUrl} 
                     alt={doctor.name} 

@@ -147,7 +147,7 @@ const Navbar = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="md:hidden glass border-b border-slate-200/50 absolute top-20 left-0 right-0 p-4"
+            className="md:hidden bg-white border-b border-slate-200/50 absolute top-20 left-0 right-0 p-4"
           >
             <div className="flex flex-col gap-4">
               {navLinks.map((link) => (
